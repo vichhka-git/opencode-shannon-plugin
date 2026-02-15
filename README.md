@@ -1,6 +1,6 @@
 # OpenCode Shannon Plugin
 
-**Enterprise-Grade AI Penetration Testing - Rival to Burp Suite Enterprise & Acunetix**
+**AI Penetration Testing on Opencode 🙈
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE.md)
 
@@ -8,7 +8,7 @@
 
 Native OpenCode plugin that brings Shannon's autonomous penetration testing capabilities to any AI provider supported by OpenCode. Based on [Shannon](https://github.com/KeygraphHQ/shannon) by KeygraphHQ (96.15% success on XBOW benchmark).
 
-**Shannon is designed to operate like a senior human penetration tester** - intelligent, adaptive, and capable of executing complex multi-stage attack chains using 600+ security tools from Kali Linux.
+**Shannon is designed to operate like a penetration tester** - intelligent, adaptive, and capable of executing complex multi-stage attack chains using 600+ security tools from Kali Linux.
 
 ### Key Features
 
