@@ -1,0 +1,32 @@
+{
+  "shannon": {
+    "require_authorization": false,
+    "docker_enabled": true,
+    "docker_image": "kalilinux/kali-rolling",
+    "real_time_notifications": true,
+    "stealth_mode": true,
+    "continuous_scan": false,
+    "report_format": "markdown",
+    "max_parallel_phases": 2,
+    "timeout_per_phase_minutes": 120
+  },
+  "agents": {
+    "shannon": {
+      "model": "anthropic/claude-opus-4-6",
+      "temperature": 0.05,
+      "max_output_tokens": 64000
+    },
+    "shannon-recon": {
+      "model": "anthropic/claude-opus-4-6",
+      "temperature": 0.05
+    },
+    "shannon-exploit": {
+      "model": "anthropic/claude-opus-4-6",
+      "temperature": 0.05
+    },
+    "shannon-report": {
+      "model": "anthropic/claude-opus-4-6",
+      "temperature": 0.1
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$comment": "Shannon Plugin - Google Gemini Models",
+  
+  "agents": {
+    "shannon": {
+      "model": "google/gemini-2.0-flash-thinking-exp",
+      "temperature": 0.1
+    },
+    "shannon-recon": {
+      "model": "google/gemini-2.0-flash-thinking-exp",
+      "temperature": 0.1
+    },
+    "shannon-exploit": {
+      "model": "google/gemini-2.0-flash-thinking-exp",
+      "temperature": 0.1
+    },
+    "shannon-report": {
+      "model": "google/gemini-2.0-flash-thinking-exp",
+      "temperature": 0.2
+    }
+  }
+}

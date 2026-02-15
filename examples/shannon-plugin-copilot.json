@@ -1,0 +1,22 @@
+{
+  "$comment": "Shannon Plugin - GitHub Copilot Models",
+  
+  "agents": {
+    "shannon": {
+      "model": "github/gpt-4o",
+      "temperature": 0.1
+    },
+    "shannon-recon": {
+      "model": "github/gpt-4o",
+      "temperature": 0.1
+    },
+    "shannon-exploit": {
+      "model": "github/gpt-4o",
+      "temperature": 0.1
+    },
+    "shannon-report": {
+      "model": "github/gpt-4o",
+      "temperature": 0.2
+    }
+  }
+}

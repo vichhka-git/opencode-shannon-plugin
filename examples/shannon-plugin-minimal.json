@@ -1,0 +1,10 @@
+{
+  "$comment": "Shannon Plugin - Minimal Configuration",
+  "$comment": "Uses all default values",
+  
+  "agents": {
+    "shannon": {
+      "model": "anthropic/claude-sonnet-4-5"
+    }
+  }
+}
