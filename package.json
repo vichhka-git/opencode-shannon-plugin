@@ -1,0 +1,57 @@
+{
+  "name": "opencode-shannon-plugin",
+  "version": "0.1.0",
+  "description": "Native OpenCode plugin for Shannon autonomous pentesting",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun --format esm && tsc --emitDeclarationOnly",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run clean && bun run build"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "shannon",
+    "pentesting",
+    "security",
+    "autonomous-agent"
+  ],
+  "author": "vichhka-git",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vichhka-git/opencode-shannon-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vichhka-git/opencode-shannon-plugin/issues"
+  },
+  "homepage": "https://github.com/vichhka-git/opencode-shannon-plugin#readme",
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.1.19",
+    "js-yaml": "^4.1.1",
+    "jsonc-parser": "^3.3.1",
+    "picocolors": "^1.1.1",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/js-yaml": "^4.0.9",
+    "bun-types": "1.3.6",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,59 @@
+# dependencies
+node_modules/
+bun.lockb
+bun.lock
+
+# build output
+out/
+dist/
+*.tgz
+
+# code coverage
+coverage/
+*.lcov
+
+# logs
+logs/
+*.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea/
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Shannon runtime artifacts
+.shannon/
+audit-logs/
+
+# OpenCode workspace
+CLAUDE.md
+
+# Development artifacts (not part of the plugin)
+demo-*.js
+test-*.ts
+test-*.js
+verify-*.js
+FINAL_REPORT.md
+IMPLEMENTATION_SUMMARY.md
+ENTERPRISE_FEATURES.md
+VERIFICATION_REPORT.md
+PHASE_9_REPORT.md
+PROJECT_STATUS.md
+dvwa-pentest-report.md
