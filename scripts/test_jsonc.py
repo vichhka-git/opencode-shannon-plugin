@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from install_global import (
     extract_array_from_key,
-    extract_strings_from_array,
+    extract_plugin_paths,
     insert_into_array,
     merge_plugin_path_jsonc,
 )
@@ -97,37 +97,37 @@ class TestExtractArrayFromKey(unittest.TestCase):
         self.assertEqual(array_content.strip(), "")
 
 
-class TestExtractStringsFromArray(unittest.TestCase):
-    """Tests for extract_strings_from_array function."""
+class TestExtractPluginPaths(unittest.TestCase):
+    """Tests for extract_plugin_paths function."""
 
     def test_simple_strings(self):
-        """Test extraction of simple strings."""
-        array_content = '"path1", "path2"'
-        result = extract_strings_from_array(array_content)
+        """Test extraction of simple paths."""
+        plugin_paths_text = '"path1", "path2"'
+        result = extract_plugin_paths(plugin_paths_text)
         self.assertEqual(result, ["path1", "path2"])
 
     def test_strings_with_comments(self):
         """Test extraction skips comments."""
-        array_content = '"path1", /* comment */ "path2"'
-        result = extract_strings_from_array(array_content)
+        plugin_paths_text = '"path1", /* comment */ "path2"'
+        result = extract_plugin_paths(plugin_paths_text)
         self.assertEqual(result, ["path1", "path2"])
 
     def test_escaped_quotes(self):
-        """Test handling of escaped quotes within strings."""
-        array_content = '"path\\"1", "path2"'
-        result = extract_strings_from_array(array_content)
+        """Test handling of escaped quotes within paths."""
+        plugin_paths_text = '"path\\"1", "path2"'
+        result = extract_plugin_paths(plugin_paths_text)
         self.assertEqual(result, ['path\\"1', "path2"])
 
     def test_empty_array(self):
         """Test extraction from empty array."""
-        array_content = ""
-        result = extract_strings_from_array(array_content)
+        plugin_paths_text = ""
+        result = extract_plugin_paths(plugin_paths_text)
         self.assertEqual(result, [])
 
     def test_only_comments(self):
         """Test extraction when array only has comments."""
-        array_content = "/* comment */ /* another */"
-        result = extract_strings_from_array(array_content)
+        plugin_paths_text = "/* comment */ /* another */"
+        result = extract_plugin_paths(plugin_paths_text)
         self.assertEqual(result, [])
 
 
