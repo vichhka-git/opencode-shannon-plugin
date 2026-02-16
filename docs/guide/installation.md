@@ -26,19 +26,51 @@ docker build -t shannon-tools .
 
 ## Step 3: Register the Plugin
 
-Add the plugin to your OpenCode configuration.
+Add the plugin to your OpenCode configuration. There are two common places to register a plugin:
 
-Edit `.opencode/opencode.json` (or `opencode.jsonc`) and add the plugin path:
+- Project-level (in-repo): `.opencode/opencode.json` or `.opencode/opencode.jsonc` — useful if the plugin should only apply for this project.
+- User-level (recommended): `~/.config/opencode/opencode.json` — preferred when you want the plugin available to OpenCode across projects and to avoid project schema conflicts.
 
-```json
+Note: Recent OpenCode versions expect the key name `plugin` (singular) in the config schema. Use `plugin` rather than `plugins`.
+
+Preferred — register at user-level (recommended):
+
+```bash
+# create config dir if it doesn't exist
+mkdir -p ~/.config/opencode
+
+# edit or create ~/.config/opencode/opencode.json and add the plugin path
+# Replace /absolute/path/to/opencode-shannon-plugin with the actual absolute path
 {
-  "plugins": [
-    "./path/to/opencode-shannon-plugin"
+  "plugin": [
+    "/absolute/path/to/opencode-shannon-plugin"
   ]
 }
 ```
 
-Replace `./path/to/opencode-shannon-plugin` with the actual path where you cloned the repo.
+Example (on this machine):
+
+```json
+{
+  "plugin": [
+    "/Users/your-username/path/to/opencode-shannon-plugin"
+  ]
+}
+```
+
+Project-level (alternative):
+
+```jsonc
+// .opencode/opencode.json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "../opencode-shannon-plugin"
+  ]
+}
+```
+
+Replace the path above with the relative or absolute path where you cloned the plugin. If OpenCode reports a configuration validation error about an unexpected key, try using the user-level file instead (the user-level config is checked against the same schema but is more appropriate for global plugins).
 
 ## Step 4: Configure (Optional)
 
