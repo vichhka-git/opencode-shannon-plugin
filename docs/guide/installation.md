@@ -35,12 +35,20 @@ Note: Recent OpenCode versions expect the key name `plugin` (singular) in the co
 
 Preferred — register at user-level (recommended):
 
-```bash
-# create config dir if it doesn't exist
-mkdir -p ~/.config/opencode
+Easiest: run the bundled installer which safely merges this plugin into your user OpenCode config and creates a default plugin config:
 
-# edit or create ~/.config/opencode/opencode.json and add the plugin path
-# Replace /absolute/path/to/opencode-shannon-plugin with the actual absolute path
+```bash
+./scripts/install-global.sh
+```
+
+What the installer does:
+- Backs up any existing `~/.config/opencode/opencode.json` to `opencode.json.bak.<timestamp>`
+- Adds this plugin path to the `"plugin"` array (idempotent)
+- Creates a default `~/.config/opencode/shannon-plugin.json` with recommended defaults (does not overwrite existing)
+
+Manual alternative: create or edit `~/.config/opencode/opencode.json` and add the plugin path:
+
+```json
 {
   "plugin": [
     "/absolute/path/to/opencode-shannon-plugin"
@@ -48,15 +56,7 @@ mkdir -p ~/.config/opencode
 }
 ```
 
-Example (on this machine):
-
-```json
-{
-  "plugin": [
-    "/Users/your-username/path/to/opencode-shannon-plugin"
-  ]
-}
-```
+Replace `/absolute/path/to/opencode-shannon-plugin` with the absolute path where you cloned this repository.
 
 Project-level (alternative):
 

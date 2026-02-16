@@ -50,13 +50,28 @@ bun install && bun run build
 docker build -t shannon-tools .
 ```
 
-Add to `.opencode/opencode.json`:
+Register the plugin at the user-level (recommended) so it is available across projects.
+
+Recommended (one-step): run the bundled installer which safely merges this plugin into your user OpenCode config and creates a default plugin config:
+
+```bash
+./scripts/install-global.sh
+```
+
+What the installer does:
+- Backs up any existing `~/.config/opencode/opencode.json` to `opencode.json.bak.<timestamp>`
+- Adds this plugin path to the `"plugin"` array (idempotent)
+- Creates a default `~/.config/opencode/shannon-plugin.json` with recommended defaults (does not overwrite existing)
+
+Manual alternative: create `~/.config/opencode/opencode.json` with the plugin path:
 
 ```json
 {
-  "plugins": ["./path/to/opencode-shannon-plugin"]
+  "plugin": ["/absolute/path/to/opencode-shannon-plugin"]
 }
 ```
+
+Replace `/absolute/path/to/opencode-shannon-plugin` with the absolute path where you cloned this repository. For a project-scoped install put the same entry in `.opencode/opencode.json` inside your repo.
 
 ### Prerequisites
 
