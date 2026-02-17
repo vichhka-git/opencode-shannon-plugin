@@ -39,6 +39,12 @@ RUN curl -sL https://github.com/projectdiscovery/subfinder/releases/latest/downl
     chmod +x /usr/local/bin/subfinder && \
     rm /tmp/subfinder.zip || true
 
+# Install gowitness - web screenshot utility with gallery UI
+# https://github.com/sensepost/gowitness
+RUN GOWITNESS_VERSION=$(curl -sL https://api.github.com/repos/sensepost/gowitness/releases/latest | jq -r '.tag_name') && \
+    curl -sL "https://github.com/sensepost/gowitness/releases/download/${GOWITNESS_VERSION}/gowitness-${GOWITNESS_VERSION}-linux-amd64" -o /usr/local/bin/gowitness && \
+    chmod +x /usr/local/bin/gowitness || true
+
 # Chromium + Playwright for browser-based testing (SPA/dynamic pages)
 # Let apt resolve Chromium's dependencies automatically instead of listing
 # individual libs (which get renamed across Kali Rolling releases, e.g. libasound2 → libasound2t64)
@@ -48,13 +54,21 @@ RUN apt-get update -o Acquire::Retries=3 && \
     fonts-liberation xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Python security libraries + Playwright
+# Python security libraries + Playwright + BrowserBruter dependencies
 RUN pip3 install --break-system-packages --no-cache-dir \
     requests beautifulsoup4 lxml \
-    playwright pyyaml 2>/dev/null || true
+    playwright pyyaml \
+    selenium selenium-wire 2>/dev/null || true
 
 # Install Playwright browsers (Chromium only to save space)
 RUN python3 -m playwright install chromium 2>/dev/null || true
+
+# Install BrowserBruter - browser-based form fuzzing (bypasses encryption)
+# https://github.com/netsquare/BrowserBruter
+RUN git clone --depth 1 https://github.com/netsquare/BrowserBruter.git /opt/BrowserBruter && \
+    cd /opt/BrowserBruter && \
+    pip3 install --break-system-packages --no-cache-dir -r requirements.txt 2>/dev/null || true && \
+    ln -sf /opt/BrowserBruter/BrowserBruter.py /usr/local/bin/browserbruter
 
 # Create workspace and wordlists directory
 WORKDIR /workspace

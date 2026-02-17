@@ -12,7 +12,7 @@
 
 ## What It Does
 
-- **600+ Kali Linux tools** running in Docker (nmap, sqlmap, nikto, gobuster, hydra, nuclei, and more)
+- **600+ Kali Linux tools** running in Docker (nmap, sqlmap, nikto, gobuster, hydra, nuclei, gowitness, BrowserBruter, and more)
 - **Browser automation** via Playwright for testing JavaScript SPAs (React, Angular, Vue)
 - **6 pentest phases**: Recon → Vuln Discovery → Browser Testing → IDOR/Upload Testing → Exploitation → Reporting
 - **Provider agnostic**: Works with Anthropic, OpenAI, Google Gemini, GitHub Copilot, Azure, Groq, DeepSeek, xAI
@@ -130,6 +130,18 @@ This triggers the full agent orchestration:
 | `shannon_browser` | Playwright browser testing for SPAs |
 | `shannon_idor_test` | IDOR testing |
 | `shannon_upload_test` | File upload vulnerability testing |
+
+### Bundled Security Tools
+
+| Tool | Purpose |
+|------|---------|
+| **gowitness** | Batch web screenshots with gallery UI, Nmap/Nessus integration |
+| **BrowserBruter** | Browser-based form fuzzing — bypasses encrypted HTTP bodies, captchas, client-side validation |
+| nmap, nikto, sqlmap | Classic vulnerability scanning |
+| nuclei, httpx, subfinder | ProjectDiscovery reconnaissance suite |
+| gobuster, ffuf, dirb | Directory and content discovery |
+| hydra, hashcat, john | Password cracking |
+| Playwright + Chromium | SPA/JavaScript testing |
 
 ---
 
