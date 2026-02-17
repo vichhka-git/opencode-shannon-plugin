@@ -38,11 +38,12 @@ Preferred — register at user-level (recommended):
 Easiest: run the bundled installer which safely merges this plugin into your user OpenCode config and creates a default plugin config:
 
 ```bash
-./scripts/install-global.sh
+python scripts/install_global.py
 ```
 
 What the installer does:
-- Backs up any existing `~/.config/opencode/opencode.json` to `opencode.json.bak.<timestamp>`
+- Prefers `opencode.jsonc` over `opencode.json` if present
+- Backs up any existing config to `<filename>.bak.<timestamp>`
 - Adds this plugin path to the `"plugin"` array (idempotent)
 - Creates a default `~/.config/opencode/shannon-plugin.json` with recommended defaults (does not overwrite existing)
 
