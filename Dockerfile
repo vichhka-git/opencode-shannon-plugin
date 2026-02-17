@@ -18,7 +18,7 @@ RUN apt-get update -o Acquire::Retries=3 && \
     nikto sqlmap gobuster dirb \
     hydra netcat-openbsd \
     hashcat john \
-    ffuf testssl.sh \
+    ffuf testssl.sh python3-tk kali-linux-headless \
     && rm -rf /var/lib/apt/lists/*
 
 # Install nuclei (latest release)
@@ -68,7 +68,8 @@ RUN python3 -m playwright install chromium 2>/dev/null || true
 RUN git clone --depth 1 https://github.com/netsquare/BrowserBruter.git /opt/BrowserBruter && \
     cd /opt/BrowserBruter && \
     pip3 install --break-system-packages --no-cache-dir -r requirements.txt 2>/dev/null || true && \
-    ln -sf /opt/BrowserBruter/BrowserBruter.py /usr/local/bin/browserbruter
+    printf '#!/bin/sh\npython3 /opt/BrowserBruter/BrowserBruter.py "$@"\n' > /usr/local/bin/browserbruter && \
+    chmod +x /usr/local/bin/browserbruter
 
 # Create workspace and wordlists directory
 WORKDIR /workspace
