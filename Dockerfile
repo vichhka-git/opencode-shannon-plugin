@@ -18,7 +18,7 @@ RUN apt-get update -o Acquire::Retries=3 && \
     nikto sqlmap gobuster dirb \
     hydra netcat-openbsd \
     hashcat john \
-    ffuf \
+    ffuf testssl.sh \
     && rm -rf /var/lib/apt/lists/*
 
 # Install nuclei (latest release)
