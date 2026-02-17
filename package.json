@@ -1,6 +1,6 @@
 {
   "name": "opencode-shannon-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Native OpenCode plugin for Shannon autonomous pentesting",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
