@@ -77,6 +77,37 @@ const ShannonPlugin: Plugin = async (ctx: PluginInput) => {
     },
     "tool.execute.after": async (input: any, output: any) => {
       await progressTracker["tool.execute.after"]?.(input, output)
+
+      // Oracle Escalation Bridge: If a high-severity vulnerability is detected, 
+      // suggest an architectural review or strategic exploitation plan to the agent.
+      if (input.name === "shannon_vuln_discovery" || input.name === "shannon_js_analyze") {
+        const outputText = typeof output.result === "string" ? output.result : JSON.stringify(output.result)
+        const hasHighSeverity = /high|critical|vulnerability found|vulnerable/i.test(outputText)
+
+        if (hasHighSeverity) {
+          console.log(pc.yellow(`[ShannonPlugin] High-severity finding detected in ${input.name}. Escalating...`))
+          output.instructions = output.instructions || []
+          output.instructions.push(
+            "CRITICAL: A high-severity vulnerability has been detected. You should now consult the Oracle agent for a deep white-box architectural review and an exploitation strategy before proceeding."
+          )
+        }
+      }
+
+      // Librarian Research Hook: If a specific service version is detected during recon,
+      // suggest delegating deep research to the Librarian agent.
+      if (input.name === "shannon_recon") {
+        const outputText = typeof output.result === "string" ? output.result : JSON.stringify(output.result)
+        const versionMatch = outputText.match(/[a-zA-Z]+\/\d+\.\d+(\.\d+)?/g)
+
+        if (versionMatch && versionMatch.length > 0) {
+          const targets = [...new Set(versionMatch)].join(", ")
+          console.log(pc.yellow(`[ShannonPlugin] Service versions detected: ${targets}. Suggesting Librarian research...`))
+          output.instructions = output.instructions || []
+          output.instructions.push(
+            `RECON COMPLETE: Specific service versions were detected: ${targets}. You should now delegate to the Librarian agent to search for known CVEs and exploit payloads for these versions.`
+          )
+        }
+      }
     },
     event: async (input: any) => {
       await progressTracker.event?.(input)

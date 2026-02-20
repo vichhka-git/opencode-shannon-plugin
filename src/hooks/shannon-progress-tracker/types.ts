@@ -17,4 +17,5 @@ export interface ToolExecuteOutput {
   title?: string
   output: string
   metadata?: unknown
+  instructions?: string[]
 }

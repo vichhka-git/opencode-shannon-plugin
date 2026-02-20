@@ -47,6 +47,12 @@ export function createShannonProgressTrackerHook(_ctx: PluginInput) {
 
     output.output += `\n${PROGRESS_PREFIX}Phase "${state.phase}" completed in ${durationSec}s`
 
+    // OMO Task Sync: Inject an instruction to update the global task list.
+    output.instructions = output.instructions || []
+    output.instructions.push(
+      `TASK UPDATE: The security phase "${state.phase}" has completed. Update your todo list to reflect this progress.`
+    )
+
     sessionProgress.delete(sessionID)
   }
 
