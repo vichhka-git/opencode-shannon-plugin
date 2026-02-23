@@ -33,6 +33,8 @@ You MUST update your global \`ulw\` task list after completing each security pha
 - **shannon_docker_cleanup**: Stop and remove the container when done.
 
 ### Core Execution
+- **shannon_exec**: Execute ANY shell command inside the Docker container. 
+  **STRICT USAGE GUARD**: Use specialized tools (shannon_recon, shannon_vuln_discovery, etc.) whenever possible as they contain alignment hooks for OMO. ONLY use \`shannon_exec\` for edge cases, custom scripts, or tools not covered by specialized commands.
 - **shannon_exec**: Execute ANY shell command inside the Docker container. The container has pre-installed: nmap, sqlmap, nikto, subfinder, whatweb, gobuster, hydra, nuclei, ffuf, httpx, hashcat, john, curl, wget, dig, whois, Chromium + Playwright, Python3, and more.
 
 ### Phase-Specific Tools
@@ -42,6 +44,9 @@ You MUST update your global \`ulw\` task list after completing each security pha
 - **shannon_report**: Format findings into a structured penetration test report.
 
 ### Specialized Testing Tools
+- **shannon_logic_audit**: Execute business logic vulnerability testing using user-defined personas and workflows. Tests for price manipulation, quantity tampering, and state-machine bypasses.
+- **shannon_cloud_recon**: Scan for cloud-native misconfigurations, CI/CD secrets, and environment metadata leaks (IMDS).
+- **shannon_api_fuzzer**: Schema-aware fuzzer for modern APIs (GraphQL, gRPC, REST). Detects introspection leaks and BOLA.
 - **shannon_browser**: Execute Playwright browser scripts for testing JavaScript-heavy SPAs (Angular, React, Vue). Essential for testing dynamic pages that curl cannot render.
 - **shannon_idor_test**: Systematic IDOR testing with two modes: \`manual\` (run a specific curl command) or \`auto\` (auto-discover and test 17 common REST API endpoint patterns for cross-user access). Auto mode requires: target base URL, auth_token, and optionally custom endpoints.
 - **shannon_upload_test**: File upload vulnerability testing — XXE, YAML deserialization, polyglot files, extension bypass.
@@ -49,8 +54,7 @@ You MUST update your global \`ulw\` task list after completing each security pha
 ### Session & Analysis Tools
 - **shannon_auth_session**: Manage persistent authenticated sessions across test phases. Actions: \`create\` (authenticate and store session), \`get\` (retrieve session credentials), \`list\` (show all active sessions), \`delete\` (remove session), \`build_headers\` (generate auth headers for use in other tools). Supports JWT, cookie, and custom header authentication.
 - **shannon_js_analyze**: Deep static analysis of JavaScript bundles. Detects: API keys (AWS, Google, GitHub, Stripe, Firebase), hardcoded credentials, XSS sinks (innerHTML, eval, document.write, dangerouslySetInnerHTML), API endpoints, interesting comments, file paths. Accepts a URL to fetch or a local file path inside Docker. Based on JS-Analyser.
-- **shannon_rate_limit_test**: Automated rate limiting and timing attack tests. Three modes: \`burst\` (rapid requests to detect rate limiting/lockout), \`timing\` (compare response times for valid vs invalid inputs to detect enumeration), \`race\` (concurrent requests to detect race conditions on state-changing operations).
-- **shannon_correlate_findings**: Auto-correlate raw findings with OWASP Top 10 (2021) categories, CWE IDs, and CVSS v3.1 scores. Input a JSON array of findings; output a structured report with severity distribution, OWASP coverage, and remediation recommendations.
+- **shannon_rate_limit_test**: Automated rate limiting and timing attack tests. Three modes: burst (rapid requests to detect rate limiting/lockout), timing (compare response times for valid vs invalid inputs to detect enumeration), race (concurrent requests to detect race conditions on state-changing operations).
 
 ## Complete Penetration Testing Methodology
 
@@ -299,13 +303,10 @@ For JavaScript-heavy SPAs (Angular, React, Vue, etc.):
 
 ### Phase 5: Reporting
 
-1. **Correlate findings** with \`shannon_correlate_findings\`:
-   - Pass all raw findings as a JSON array: \`shannon_correlate_findings findings='[{"title":"SQL Injection","description":"...","evidence":"...","severity_hint":"critical","endpoint":"/api/login"}]'\`
-   - Automatically maps to OWASP Top 10, CWE IDs, CVSS v3.1 scores
-   - Generates severity distribution and OWASP coverage tables
-
-2. **Generate final report** with \`shannon_report\`:
-   - Use \`shannon_report\` to compile all findings. Each finding must include:
+1. **Generate final report** with shannon_report:
+   - Use shannon_report to compile all findings.
+   - For automatic correlation with OWASP/CWE/CVSS, set correlate=true and provide a JSON array of findings.
+   - Each finding must include:
    - **Severity**: CRITICAL / HIGH / MEDIUM / LOW / INFO
    - **CVSS Score**: Use CVSS v3.1 calculator
    - **CWE Reference**: Map to appropriate CWE ID
@@ -329,8 +330,7 @@ Call \`shannon_docker_cleanup\` when finished.
 - **Analyze JS bundles**: Use \`shannon_js_analyze\` on every discovered JS bundle — it finds secrets, endpoints, and XSS sinks automatically.
 - **Manage sessions**: Use \`shannon_auth_session\` to create persistent sessions and reuse them across IDOR, injection, and privilege escalation tests.
 - **Test rate limits**: Use \`shannon_rate_limit_test\` to check for missing rate limiting, timing leaks, and race conditions.
-- **Test authorization depth**: After getting one user's session, use \`shannon_idor_test\` in auto mode to systematically test ALL resource endpoints.
-- **Correlate findings**: Before final reporting, use \`shannon_correlate_findings\` to map findings to OWASP/CWE/CVSS standards.
+- **Test authorization depth**: After getting one user's session, use `shannon_idor_test` in auto mode to systematically test ALL resource endpoints.
 - **Crack what you find**: If you extract password hashes, use hashcat/john to crack them.
 - **Parse JavaScript sources**: Extract routes, endpoints, and secrets from client-side bundles.
 

@@ -12,7 +12,9 @@ import { createShannonUploadTest } from "./tools/shannon-upload"
 import { createShannonAuthSession } from "./tools/shannon-auth-session"
 import { createShannonJsAnalyze } from "./tools/shannon-js-analyze"
 import { createShannonRateLimitTest } from "./tools/shannon-rate-limit"
-import { createShannonCorrelateFindings } from "./tools/shannon-correlate"
+import { createShannonLogicAudit } from "./tools/shannon-logic-audit"
+import { createShannonCloudRecon } from "./tools/shannon-cloud-recon"
+import { createShannonApiFuzzer } from "./tools/shannon-api-fuzzer"
 import {
   createShannonExec,
   createShannonDockerInit,
@@ -43,7 +45,9 @@ const ShannonPlugin: Plugin = async (ctx: PluginInput) => {
     shannon_auth_session: createShannonAuthSession(),
     shannon_js_analyze: createShannonJsAnalyze(),
     shannon_rate_limit_test: createShannonRateLimitTest(),
-    shannon_correlate_findings: createShannonCorrelateFindings(),
+    shannon_logic_audit: createShannonLogicAudit(),
+    shannon_cloud_recon: createShannonCloudRecon(),
+    shannon_api_fuzzer: createShannonApiFuzzer(),
   }
 
   if (config.shannon.browser_testing) {
