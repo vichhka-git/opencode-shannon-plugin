@@ -1,1 +1,1 @@
-export { createShannonExec, createShannonDockerInit, createShannonDockerCleanup } from "./tools"
+export { createShannonExec, createShannonDockerInit, createShannonDockerCleanup, createShannonFileExtract } from "./tools"

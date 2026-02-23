@@ -300,9 +300,9 @@ done
 
 ## Phase 6: Reporting
 
-Use `shannon_correlate_findings` to auto-map findings:
+Use `shannon_report` to auto-map findings:
 ```
-shannon_correlate_findings findings='[
+shannon_report findings='[
   {"title":"Missing Rate Limiting on Login","description":"Login endpoint accepts unlimited requests","evidence":"50 requests sent, all returned 200","severity_hint":"high","endpoint":"/api/login"},
   {"title":"IDOR on User Profile","description":"User A can read User B profile","evidence":"GET /api/Users/2 returns data with User 1 token","severity_hint":"high","endpoint":"/api/Users/{id}"}
 ]'

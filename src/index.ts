@@ -1,4 +1,4 @@
-import type { Plugin, PluginInput } from "@opencode-ai/plugin"
+import type { Plugin, PluginInput, ToolDefinition } from "@opencode-ai/plugin"
 import pc from "picocolors"
 
 import { loadPluginConfig } from "./config"
@@ -12,13 +12,17 @@ import { createShannonUploadTest } from "./tools/shannon-upload"
 import { createShannonAuthSession } from "./tools/shannon-auth-session"
 import { createShannonJsAnalyze } from "./tools/shannon-js-analyze"
 import { createShannonRateLimitTest } from "./tools/shannon-rate-limit"
-import { createShannonLogicAudit } from "./tools/shannon-logic-audit"
-import { createShannonCloudRecon } from "./tools/shannon-cloud-recon"
+import { createShannonCrawler } from "./tools/shannon-crawler"
+import { createShannonParamFuzz } from "./tools/shannon-param-fuzz"
+import { createShannonTlsScan } from "./tools/shannon-tls-scan"
+import { createShannonSubdomainTakeover } from "./tools/shannon-subdomain-takeover"
+import { createShannonHeadersAudit } from "./tools/shannon-headers-audit"
 import { createShannonApiFuzzer } from "./tools/shannon-api-fuzzer"
 import {
   createShannonExec,
   createShannonDockerInit,
   createShannonDockerCleanup,
+  createShannonFileExtract,
 } from "./tools/shannon-docker"
 import {
   createShannonAuthorizationValidatorHook,
@@ -27,6 +31,12 @@ import {
 } from "./hooks"
 import { SHANNON_SYSTEM_PROMPT } from "./system-prompt"
 
+const KNOWN_SERVICE_PATTERN =
+  /(?:Apache|Nginx|PHP|MySQL|MariaDB|OpenSSH|jQuery|Node\.js|Python|Ruby|Tomcat|IIS|WordPress|Drupal|Joomla|phpMyAdmin|GitLab|Jenkins|Grafana|Redis|MongoDB|PostgreSQL|Elasticsearch|RabbitMQ|Consul|Vault|MinIO|Keycloak|Strapi|Moodle|Express|Flask|Django|Spring|Rails|Laravel|Angular|React|Vue|Mailman|OJS|pgAdmin|CloudPanel|Portainer|Traefik|HAProxy)\/\d+\.\d+(\.\d+)?/gi
+
+const HIGH_SEVERITY_PATTERN =
+  /\b(critical|high)\b[^.]{0,80}\b(vulnerab|exploit|inject|bypass|compromise|unauthori|escalat|expos)/i
+
 const ShannonPlugin: Plugin = async (ctx: PluginInput) => {
   console.log(pc.cyan("[ShannonPlugin] Loading Shannon pentest plugin..."))
 
@@ -34,10 +44,11 @@ const ShannonPlugin: Plugin = async (ctx: PluginInput) => {
   console.log(pc.green("[ShannonPlugin] Config loaded successfully"))
 
   console.log(pc.cyan("[ShannonPlugin] Registering tools..."))
-  const tools: Record<string, any> = {
+  const tools: Record<string, ToolDefinition> = {
     shannon_exec: createShannonExec(),
     shannon_docker_init: createShannonDockerInit(),
     shannon_docker_cleanup: createShannonDockerCleanup(),
+    shannon_file_extract: createShannonFileExtract(),
     shannon_recon: createShannonRecon(),
     shannon_vuln_discovery: createShannonVulnDiscovery(),
     shannon_exploit: createShannonExploit(),
@@ -45,20 +56,23 @@ const ShannonPlugin: Plugin = async (ctx: PluginInput) => {
     shannon_auth_session: createShannonAuthSession(),
     shannon_js_analyze: createShannonJsAnalyze(),
     shannon_rate_limit_test: createShannonRateLimitTest(),
-    shannon_logic_audit: createShannonLogicAudit(),
-    shannon_cloud_recon: createShannonCloudRecon(),
+    shannon_crawler: createShannonCrawler(),
+    shannon_param_fuzz: createShannonParamFuzz(),
+    shannon_tls_scan: createShannonTlsScan(),
+    shannon_subdomain_takeover: createShannonSubdomainTakeover(),
+    shannon_headers_audit: createShannonHeadersAudit(),
     shannon_api_fuzzer: createShannonApiFuzzer(),
   }
 
-  if (config.shannon.browser_testing) {
+  if (config.shannon.browser_testing !== false) {
     tools.shannon_browser = createShannonBrowser()
   }
 
-  if (config.shannon.idor_testing) {
+  if (config.shannon.idor_testing !== false) {
     tools.shannon_idor_test = createShannonIdorTest()
   }
 
-  if (config.shannon.upload_testing) {
+  if (config.shannon.upload_testing !== false) {
     tools.shannon_upload_test = createShannonUploadTest()
   }
 
@@ -82,13 +96,10 @@ const ShannonPlugin: Plugin = async (ctx: PluginInput) => {
     "tool.execute.after": async (input: any, output: any) => {
       await progressTracker["tool.execute.after"]?.(input, output)
 
-      // Oracle Escalation Bridge: If a high-severity vulnerability is detected, 
-      // suggest an architectural review or strategic exploitation plan to the agent.
       if (input.name === "shannon_vuln_discovery" || input.name === "shannon_js_analyze") {
         const outputText = typeof output.result === "string" ? output.result : JSON.stringify(output.result)
-        const hasHighSeverity = /high|critical|vulnerability found|vulnerable/i.test(outputText)
 
-        if (hasHighSeverity) {
+        if (HIGH_SEVERITY_PATTERN.test(outputText)) {
           console.log(pc.yellow(`[ShannonPlugin] High-severity finding detected in ${input.name}. Escalating...`))
           output.instructions = output.instructions || []
           output.instructions.push(
@@ -97,11 +108,9 @@ const ShannonPlugin: Plugin = async (ctx: PluginInput) => {
         }
       }
 
-      // Librarian Research Hook: If a specific service version is detected during recon,
-      // suggest delegating deep research to the Librarian agent.
       if (input.name === "shannon_recon") {
         const outputText = typeof output.result === "string" ? output.result : JSON.stringify(output.result)
-        const versionMatch = outputText.match(/[a-zA-Z]+\/\d+\.\d+(\.\d+)?/g)
+        const versionMatch = outputText.match(KNOWN_SERVICE_PATTERN)
 
         if (versionMatch && versionMatch.length > 0) {
           const targets = [...new Set(versionMatch)].join(", ")

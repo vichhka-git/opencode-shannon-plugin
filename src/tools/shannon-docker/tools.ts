@@ -105,3 +105,47 @@ Removes the running container and frees resources. Safe to call even if containe
     },
   })
 }
+
+export function createShannonFileExtract(): ToolDefinition {
+  return tool({
+    description: `Copy files from the Shannon Docker container to the host filesystem.
+
+Use this to extract screenshots, generated reports, scan results, or any other files
+created inside the Docker container during pentesting.
+
+The container's /workspace directory is bind-mounted to the host project root,
+so files written there are already accessible. Use this tool for files created
+elsewhere in the container (e.g., /tmp, /root, tool output directories).
+
+Examples:
+- Extract a screenshot: container_path="/workspace/screenshot.png", host_path="./evidence/screenshot.png"
+- Extract nuclei results: container_path="/tmp/nuclei-output.json", host_path="./results/nuclei.json"`,
+    args: {
+      container_path: tool.schema
+        .string()
+        .describe("Absolute path to the file or directory inside the Docker container"),
+      host_path: tool.schema
+        .string()
+        .describe("Path on the host filesystem where the file should be saved"),
+    },
+    async execute(args) {
+      const docker = DockerManager.getInstance()
+
+      if (!docker.isRunning()) {
+        return "Error: Shannon container is not running. Start it first with shannon_docker_init."
+      }
+
+      const result = await docker.copyFromContainer(args.container_path, args.host_path)
+
+      if (result.success) {
+        return [
+          `File extracted successfully.`,
+          `**From (container)**: ${args.container_path}`,
+          `**To (host)**: ${args.host_path}`,
+        ].join("\n")
+      }
+
+      return `Failed to extract file: ${result.error}`
+    },
+  })
+}

@@ -6,6 +6,8 @@ import { DOCKER_CONTAINER_NAME, DOCKER_IMAGE_NAME, DEFAULT_TIMEOUT } from "./con
 
 const execAsync = promisify(exec)
 
+const MAX_BUFFER = 50 * 1024 * 1024 // 50MB — large scan outputs (nmap, nuclei)
+
 export class DockerManager {
   private static instance: DockerManager | null = null
   private containerRunning = false
@@ -35,7 +37,11 @@ export class DockerManager {
           `docker inspect -f '{{.State.Running}}' ${this.containerName}`
         )
         if (stdout.trim() === "true") return
-      } catch {
+      } catch (error) {
+        console.warn(
+          pc.yellow(`[DockerManager] Container health check failed, resetting state`),
+          error instanceof Error ? error.message : error
+        )
       }
       this.containerRunning = false
     }
@@ -60,6 +66,7 @@ export class DockerManager {
       console.log(pc.cyan(`[DockerManager] Removing stopped container "${this.containerName}"...`))
       await execAsync(`docker rm -f ${this.containerName}`)
     } catch {
+      // Container doesn't exist yet — expected on first run
     }
 
     try {
@@ -72,9 +79,13 @@ export class DockerManager {
     }
 
     console.log(pc.cyan(`[DockerManager] Starting container "${this.containerName}"...`))
+    const cwd = process.cwd()
     await execAsync(
-      `docker run -d --name ${this.containerName} --network host ${this.imageName} tail -f /dev/null`
+      `docker run -d --name ${this.containerName} --network host ` +
+        `--cap-add=NET_RAW --cap-add=NET_ADMIN ` +
+        `-v "${cwd}:/workspace" ${this.imageName} tail -f /dev/null`
     )
+
     this.containerRunning = true
     console.log(pc.green(`[DockerManager] Container "${this.containerName}" is running`))
   }
@@ -87,10 +98,19 @@ export class DockerManager {
     const startTime = Date.now()
 
     try {
-      const escaped = command.replace(/'/g, "'\"'\"'")
+      // Base64-encode the command to avoid all shell escaping issues.
+      // The encoded string contains only [A-Za-z0-9+/=] — safe in any shell context.
+      // Decode to a unique temp file so the command's own stdin remains available,
+      // and concurrent exec() calls don't collide.
+      const encoded = Buffer.from(command).toString("base64")
+      const cmdId = `_sh_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      const wrapper =
+        `echo "${encoded}" | base64 -d > /tmp/${cmdId}.sh && ` +
+        `bash /tmp/${cmdId}.sh; _rc=$?; rm -f /tmp/${cmdId}.sh; exit $_rc`
+
       const { stdout, stderr } = await execAsync(
-        `docker exec ${this.containerName} bash -c '${escaped}'`,
-        { timeout, maxBuffer: 10 * 1024 * 1024 }
+        `docker exec ${this.containerName} bash -c '${wrapper}'`,
+        { timeout, maxBuffer: MAX_BUFFER }
       )
 
       return {
@@ -116,6 +136,24 @@ export class DockerManager {
     return this.exec(command, timeout)
   }
 
+  /**
+   * Copy a file or directory from the Docker container to the host filesystem.
+   */
+  async copyFromContainer(
+    containerPath: string,
+    hostPath: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await execAsync(
+        `docker cp ${this.containerName}:"${containerPath}" "${hostPath}"`,
+        { timeout: 30000 }
+      )
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  }
+
   async cleanup(): Promise<void> {
     console.log(pc.cyan(`[DockerManager] Stopping container "${this.containerName}"...`))
     try {
@@ -124,6 +162,7 @@ export class DockerManager {
       console.log(pc.green(`[DockerManager] Container "${this.containerName}" removed`))
     } catch (error) {
       console.error(pc.red("[DockerManager] Cleanup failed:"), error)
+      this.containerRunning = false
     }
   }
 

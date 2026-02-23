@@ -1,5 +1,7 @@
 import { tool, type ToolDefinition } from "@opencode-ai/plugin"
 import { SHANNON_REPORT_DESCRIPTION } from "./constants"
+import { DockerManager } from "../../docker/manager"
+
 
 interface RawFinding {
   title: string
@@ -276,13 +278,17 @@ export function createShannonReport(): ToolDefinition {
         .string()
         .describe("Complete findings text OR a JSON array of findings to be correlated"),
       format: tool.schema
-        .enum(["markdown", "json", "html"])
+        .enum(["markdown", "json", "html", "pdf"])
         .optional()
         .describe("Report format (default: markdown)"),
       correlate: tool.schema
         .boolean()
         .optional()
         .describe("Whether to automatically correlate and map findings (requires JSON findings)"),
+      output_file: tool.schema
+        .string()
+        .optional()
+        .describe("Relative path to save the report (e.g. 'pentest-report.pdf'). Written to /workspace inside Docker which is mounted to cwd on the host."),
     },
     async execute(args) {
       const format = args.format ?? "markdown"
@@ -340,8 +346,8 @@ export function createShannonReport(): ToolDefinition {
 
             finalFindings = formatCorrelatedFindings(correlated)
           }
-        } catch (e) {
-          // If correlation fails, fall back to raw findings
+        } catch {
+          finalFindings = args.findings
         }
       }
 
@@ -358,7 +364,7 @@ export function createShannonReport(): ToolDefinition {
         )
       }
 
-      return [
+      const reportContent = [
         `# Penetration Test Report`,
         "",
         `**Target**: ${args.target}`,
@@ -369,8 +375,189 @@ export function createShannonReport(): ToolDefinition {
         "",
         finalFindings,
       ].join("\n")
+
+      if (args.output_file) {
+        try {
+          const docker = DockerManager.getInstance()
+          const safePath = args.output_file.replace(/'/g, "\\'")
+          const mdPath = safePath.replace(/\.[^.]+$/, "") + ".md"
+          await docker.exec(`cat > '/workspace/${mdPath}' << 'SHANNON_EOF'
+${reportContent}
+SHANNON_EOF`)
+
+          if (format === "pdf") {
+            const pdfPath = safePath.replace(/\.[^.]+$/, "") + ".pdf"
+            const pdfScript = generatePdfScript(args.target, timestamp, reportContent, pdfPath)
+            const scriptPath = `/tmp/_shannon_pdf_${Date.now()}.py`
+            await docker.exec(`cat > '${scriptPath}' << 'PDF_SCRIPT_EOF'
+${pdfScript}
+PDF_SCRIPT_EOF`)
+            const result = await docker.exec(`python3 '${scriptPath}' 2>&1; rm -f '${scriptPath}'`, 60000)
+            if (result.success && result.exitCode === 0) {
+              return `## Report Generated
+
+PDF saved to: **${pdfPath}** (in project root)
+Markdown saved to: **${mdPath}**
+
+---
+
+${reportContent}`
+            }
+            return `PDF generation failed (${result.stderr || result.stdout}). Markdown saved to ${mdPath}.
+
+${reportContent}`
+          }
+
+          if (format === "html") {
+            const htmlPath = safePath.replace(/\.[^.]+$/, "") + ".html"
+            const htmlContent = markdownToHtml(reportContent, args.target, timestamp)
+            const escapedHtml = htmlContent.replace(/'/g, "'\\''")
+            await docker.exec(`echo '${escapedHtml}' > '/workspace/${htmlPath}'`)
+            return `## Report Generated
+
+HTML saved to: **${htmlPath}** (in project root)
+Markdown saved to: **${mdPath}**
+
+---
+
+${reportContent}`
+          }
+
+          return `## Report Generated
+
+Markdown saved to: **${mdPath}** (in project root)
+
+---
+
+${reportContent}`
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : String(error)
+          return `Failed to save report to disk: ${msg}
+
+${reportContent}`
+        }
+      }
+
+      return reportContent
     },
   })
+}
+
+function generatePdfScript(target: string, timestamp: string, content: string, outputPath: string): string {
+  const escapedContent = content
+    .replace(/\\/g, "\\\\")
+    .replace(/"""/g, '\\"\\"\\"')
+    .replace(/\n/g, "\\n")
+
+  return `#!/usr/bin/env python3
+import subprocess, sys
+try:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.lib.colors import HexColor
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--break-system-packages", "-q", "reportlab"])
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.lib.colors import HexColor
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+
+doc = SimpleDocTemplate("/workspace/${outputPath}", pagesize=A4,
+    rightMargin=1.5*cm, leftMargin=1.5*cm, topMargin=2*cm, bottomMargin=2*cm)
+styles = getSampleStyleSheet()
+styles.add(ParagraphStyle('ReportTitle', parent=styles['Title'], fontSize=22, leading=28,
+    textColor=HexColor('#1a1a2e'), spaceAfter=6, alignment=1, fontName='Helvetica-Bold'))
+styles.add(ParagraphStyle('ReportMeta', parent=styles['Normal'], fontSize=11, leading=14,
+    textColor=HexColor('#555555'), spaceAfter=4, alignment=1))
+styles.add(ParagraphStyle('ReportBody', parent=styles['Normal'], fontSize=10, leading=14,
+    textColor=HexColor('#333333'), spaceAfter=6, alignment=4))
+styles.add(ParagraphStyle('ReportH2', parent=styles['Heading2'], fontSize=14, leading=17,
+    textColor=HexColor('#1a1a2e'), spaceBefore=14, spaceAfter=8, fontName='Helvetica-Bold'))
+styles.add(ParagraphStyle('ReportCode', parent=styles['Normal'], fontSize=8, leading=11,
+    fontName='Courier', backColor=HexColor('#f8f9fa'), leftIndent=12, rightIndent=12,
+    spaceBefore=4, spaceAfter=8))
+story = []
+story.append(Spacer(1, 2*cm))
+story.append(Paragraph("PENETRATION TEST REPORT", styles['ReportTitle']))
+story.append(Spacer(1, 0.3*cm))
+story.append(Paragraph("Target: ${target}", styles['ReportMeta']))
+story.append(Paragraph("Generated: ${timestamp}", styles['ReportMeta']))
+story.append(Spacer(1, 0.5*cm))
+story.append(HRFlowable(width="80%", thickness=2, color=HexColor('#e94560')))
+story.append(Spacer(1, 1*cm))
+content = """${escapedContent}"""
+for line in content.split("\\n"):
+    line = line.strip()
+    if not line:
+        story.append(Spacer(1, 0.2*cm))
+    elif line.startswith("## "):
+        story.append(Paragraph(line[3:], styles['ReportH2']))
+    elif line.startswith("# "):
+        story.append(Paragraph(line[2:], styles['ReportTitle']))
+    elif line.startswith("\`\`\`"):
+        continue
+    elif line.startswith("---"):
+        story.append(HRFlowable(width="100%", thickness=1, color=HexColor('#dee2e6')))
+    elif line.startswith("**") and line.endswith("**"):
+        clean = line.replace("**", "")
+        story.append(Paragraph(f"<b>{clean}</b>", styles['ReportBody']))
+    elif line.startswith("- "):
+        story.append(Paragraph(f"\\u2022 {line[2:]}", styles['ReportBody']))
+    elif line.startswith("| "):
+        story.append(Paragraph(line.replace("|", " | "), styles['ReportCode']))
+    else:
+        safe = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        story.append(Paragraph(safe, styles['ReportBody']))
+doc.build(story)
+print(f"PDF generated: /workspace/${outputPath}")
+`
+}
+
+function markdownToHtml(markdown: string, target: string, timestamp: string): string {
+  const escaped = markdown
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+
+  const bodyHtml = escaped
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/^---$/gm, "<hr>")
+    .replace(/\n\n/g, "</p><p>")
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pentest Report - ${target}</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; color: #333; line-height: 1.6; }
+h1 { color: #1a1a2e; border-bottom: 3px solid #e94560; padding-bottom: 0.5rem; }
+h2 { color: #16213e; margin-top: 2rem; }
+h3 { color: #333; }
+code { background: #f8f9fa; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f8f9fa; padding: 1rem; border-radius: 5px; overflow-x: auto; border: 1px solid #dee2e6; }
+hr { border: none; border-top: 1px solid #dee2e6; margin: 2rem 0; }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+th, td { border: 1px solid #dee2e6; padding: 8px 12px; text-align: left; }
+th { background: #16213e; color: white; }
+.meta { color: #666; font-size: 0.95em; }
+</style>
+</head>
+<body>
+<p class="meta">Generated: ${timestamp}</p>
+<p>${bodyHtml}</p>
+</body>
+</html>`
 }
 
 function formatCorrelatedFindings(findings: any[]): string {

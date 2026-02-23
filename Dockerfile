@@ -18,7 +18,8 @@ RUN apt-get update -o Acquire::Retries=3 && \
     nikto sqlmap gobuster dirb \
     hydra netcat-openbsd \
     hashcat john \
-    ffuf testssl.sh python3-tk kali-linux-headless \
+    ffuf testssl.sh python3-tk \
+    pandoc weasyprint fonts-recommended \
     && rm -rf /var/lib/apt/lists/*
 
 # Install nuclei (latest release)
@@ -38,6 +39,12 @@ RUN curl -sL https://github.com/projectdiscovery/subfinder/releases/latest/downl
     unzip /tmp/subfinder.zip -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/subfinder && \
     rm /tmp/subfinder.zip || true
+
+# Install grpcurl (latest release)
+RUN curl -sL https://github.com/fullstorydev/grpcurl/releases/latest/download/grpcurl_$(curl -sL https://api.github.com/repos/fullstorydev/grpcurl/releases/latest | jq -r ".tag_name" | sed "s/v//")_linux_x86_64.tar.gz -o /tmp/grpcurl.tar.gz && \
+    tar -xvf /tmp/grpcurl.tar.gz -C /usr/local/bin grpcurl && \
+    rm /tmp/grpcurl.tar.gz || true
+
 
 # Install gowitness - web screenshot utility with gallery UI
 # https://github.com/sensepost/gowitness
@@ -76,6 +83,9 @@ WORKDIR /workspace
 
 # Download common wordlists if not present
 RUN mkdir -p /usr/share/wordlists/dirb && \
+    [ -f /usr/share/wordlists/rockyou.txt ] || \
+    (curl -sL https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt -o /usr/share/wordlists/rockyou.txt 2>/dev/null || true) && \
+
     [ -f /usr/share/wordlists/dirb/common.txt ] || \
     curl -sL https://raw.githubusercontent.com/v0re/dirb/master/wordlists/common.txt \
     -o /usr/share/wordlists/dirb/common.txt 2>/dev/null || true

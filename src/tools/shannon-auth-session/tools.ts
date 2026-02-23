@@ -80,7 +80,6 @@ export function createShannonAuthSession(): ToolDefinition {
             return "ERROR: 'session_type' is required for create action"
           }
 
-          // If manual credentials provided, use them directly
           if (args.manual_credentials) {
             const session = sessionManager.createSession(
               args.target,
@@ -91,7 +90,6 @@ export function createShannonAuthSession(): ToolDefinition {
             return formatSessionResponse(session, "Session created (manual)")
           }
 
-          // Otherwise, perform automated login
           if (!args.login_endpoint || !args.credentials) {
             return "ERROR: Either 'manual_credentials' OR ('login_endpoint' + 'credentials') required"
           }
@@ -102,9 +100,9 @@ export function createShannonAuthSession(): ToolDefinition {
           const loginData = JSON.stringify(args.credentials)
           const verifySsl = args.verify_ssl === false ? "-k" : ""
 
-          const curlCmd = `curl -s -X POST ${verifySsl} "${loginUrl}" \\
-            -H "Content-Type: application/json" \\
-            -d '${loginData}' \\
+          const curlCmd = `curl -s -X POST ${verifySsl} "${loginUrl}" \\\
+            -H "Content-Type: application/json" \\\
+            -d '${loginData}' \\\
             -i`
 
           const result = await docker.exec(curlCmd, 30000)
@@ -113,7 +111,6 @@ export function createShannonAuthSession(): ToolDefinition {
             return `ERROR: Login failed\\nstderr: ${result.stderr}\\nstdout: ${result.stdout}`
           }
 
-          // Parse response for JWT or cookies
           const credentials = parseLoginResponse(
             result.stdout,
             args.session_type
@@ -209,14 +206,12 @@ function parseLoginResponse(
   const lines = response.split("\\n")
 
   if (sessionType === "jwt") {
-    // Look for JWT in response body (JSON)
     const bodyStartIndex = lines.findIndex((l) => l.trim() === "")
     if (bodyStartIndex === -1) return null
 
     const body = lines.slice(bodyStartIndex + 1).join("\\n")
     try {
       const json = JSON.parse(body)
-      // Common JWT response fields
       const token =
         json.token || json.access_token || json.accessToken || json.jwt
       if (token) {
@@ -228,16 +223,18 @@ function parseLoginResponse(
   }
 
   if (sessionType === "cookie") {
-    // Extract Set-Cookie headers
     const cookies: Record<string, string> = {}
     for (const line of lines) {
       if (line.toLowerCase().startsWith("set-cookie:")) {
         const cookieStr = line.substring("set-cookie:".length).trim()
         const [nameValue] = cookieStr.split(";")
         if (!nameValue) continue
-        const [name, value] = nameValue.split("=")
+        const eqIdx = nameValue.indexOf("=")
+        if (eqIdx === -1) continue
+        const name = nameValue.slice(0, eqIdx).trim()
+        const value = nameValue.slice(eqIdx + 1).trim()
         if (name && value) {
-          cookies[name.trim()] = value.trim()
+          cookies[name] = value
         }
       }
     }

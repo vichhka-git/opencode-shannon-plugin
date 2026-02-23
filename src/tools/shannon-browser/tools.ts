@@ -25,11 +25,9 @@ export function createShannonBrowser(): ToolDefinition {
 
       const wrappedScript = buildPlaywrightScript(args.script)
 
-      const escaped = wrappedScript
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "'\"'\"'")
-
-      const command = `python3 -c '${escaped}'`
+      // Use heredoc to pass Python code — no escaping needed.
+      // The base64-encoding in docker.exec() handles shell transport safely.
+      const command = `python3 << 'SHANNON_PYEOF'\n${wrappedScript}\nSHANNON_PYEOF`
       const result = await docker.exec(command, args.timeout ?? 60000)
 
       const output = [
@@ -57,8 +55,7 @@ export function createShannonBrowser(): ToolDefinition {
 }
 
 function buildPlaywrightScript(userScript: string): string {
-  return `
-import asyncio
+  return `import asyncio
 from playwright.async_api import async_playwright
 
 async def run():
@@ -77,15 +74,36 @@ ${indentScript(userScript, 12)}
         finally:
             await browser.close()
 
-asyncio.run(run())
-`
+asyncio.run(run())`
 }
 
+/**
+ * Indent a user script while preserving its relative indentation.
+ * Finds the minimum leading whitespace across non-empty lines,
+ * strips that common prefix, then re-indents to the target level.
+ */
 function indentScript(script: string, spaces: number): string {
   const indent = " ".repeat(spaces)
-  return script
-    .split("\n")
-    .map((line) => (line.trim() ? indent + line : ""))
+  const lines = script.split("\n")
+
+  // Find minimum indentation of non-empty lines
+  const nonEmptyLines = lines.filter((line) => line.trim().length > 0)
+  if (nonEmptyLines.length === 0) return ""
+
+  const minIndent = nonEmptyLines.reduce((min, line) => {
+    const match = line.match(/^(\s*)/)
+    const leading = match?.[1]?.length ?? 0
+    return Math.min(min, leading)
+  }, Infinity)
+
+  const strip = minIndent === Infinity ? 0 : minIndent
+
+  return lines
+    .map((line) => {
+      if (!line.trim()) return ""
+      // Preserve relative indentation: strip common prefix, add target indent
+      return indent + line.slice(strip)
+    })
     .join("\n")
 }
 

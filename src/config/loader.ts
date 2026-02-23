@@ -90,7 +90,6 @@ export function loadPluginConfig(directory: string): ShannonConfig {
     if (config) {
       config = {
         shannon: deepMerge(config.shannon, projectConfig.shannon),
-        agents: deepMerge(config.agents, projectConfig.agents),
         disabled_hooks: [
           ...(config.disabled_hooks || []),
           ...(projectConfig.disabled_hooks || []),

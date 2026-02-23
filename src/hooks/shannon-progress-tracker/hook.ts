@@ -5,6 +5,10 @@ import type { ToolExecuteInput, ToolExecuteOutput, ProgressState } from "./types
 export function createShannonProgressTrackerHook(_ctx: PluginInput) {
   const sessionProgress = new Map<string, ProgressState>()
 
+  function progressKey(sessionID: string, tool: string): string {
+    return `${sessionID}:${tool}`
+  }
+
   const toolExecuteBefore = async (
     input: ToolExecuteInput,
     _output: ToolExecuteOutput,
@@ -24,7 +28,7 @@ export function createShannonProgressTrackerHook(_ctx: PluginInput) {
       lastUpdate: Date.now(),
     }
 
-    sessionProgress.set(sessionID, state)
+    sessionProgress.set(progressKey(sessionID, tool), state)
   }
 
   const toolExecuteAfter = async (
@@ -37,7 +41,8 @@ export function createShannonProgressTrackerHook(_ctx: PluginInput) {
       return
     }
 
-    const state = sessionProgress.get(sessionID)
+    const key = progressKey(sessionID, tool)
+    const state = sessionProgress.get(key)
     if (!state) {
       return
     }
@@ -47,20 +52,23 @@ export function createShannonProgressTrackerHook(_ctx: PluginInput) {
 
     output.output += `\n${PROGRESS_PREFIX}Phase "${state.phase}" completed in ${durationSec}s`
 
-    // OMO Task Sync: Inject an instruction to update the global task list.
     output.instructions = output.instructions || []
     output.instructions.push(
       `TASK UPDATE: The security phase "${state.phase}" has completed. Update your todo list to reflect this progress.`
     )
 
-    sessionProgress.delete(sessionID)
+    sessionProgress.delete(key)
   }
 
   const event = async (input: { event: { type: string; properties?: { sessionID?: string } } }) => {
     const { type, properties } = input.event
 
     if (type === "session.deleted" && properties?.sessionID) {
-      sessionProgress.delete(properties.sessionID)
+      for (const key of sessionProgress.keys()) {
+        if (key.startsWith(`${properties.sessionID}:`)) {
+          sessionProgress.delete(key)
+        }
+      }
     }
   }
 

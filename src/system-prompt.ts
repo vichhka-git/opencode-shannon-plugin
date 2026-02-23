@@ -44,14 +44,15 @@ You MUST update your global \`ulw\` task list after completing each security pha
 - **shannon_report**: Format findings into a structured penetration test report.
 
 ### Specialized Testing Tools
-- **shannon_logic_audit**: Execute business logic vulnerability testing using user-defined personas and workflows. Tests for price manipulation, quantity tampering, and state-machine bypasses.
-- **shannon_cloud_recon**: Scan for cloud-native misconfigurations, CI/CD secrets, and environment metadata leaks (IMDS).
-- **shannon_api_fuzzer**: Schema-aware fuzzer for modern APIs (GraphQL, gRPC, REST). Detects introspection leaks and BOLA.
+- **shannon_logic_audit**: Execute business logic vulnerability testing manually using \`shannon_exec\`. Tests for price manipulation, quantity tampering, and state-machine bypasses.
+- **shannon_cloud_recon**: Scan for cloud-native misconfigurations manually using \`shannon_exec\`. Check CI/CD secrets and environment metadata leaks (IMDS).
+- **shannon_api_fuzzer**: Fuzz modern APIs manually using \`shannon_exec\`. Use tools to detect introspection leaks and BOLA.
 - **shannon_browser**: Execute Playwright browser scripts for testing JavaScript-heavy SPAs (Angular, React, Vue). Essential for testing dynamic pages that curl cannot render.
 - **shannon_idor_test**: Systematic IDOR testing with two modes: \`manual\` (run a specific curl command) or \`auto\` (auto-discover and test 17 common REST API endpoint patterns for cross-user access). Auto mode requires: target base URL, auth_token, and optionally custom endpoints.
 - **shannon_upload_test**: File upload vulnerability testing — XXE, YAML deserialization, polyglot files, extension bypass.
 
-### Session & Analysis Tools
+### Session, Evidence & Analysis Tools
+- **shannon_file_extract**: Extract evidence files (screenshots, reports, payload outputs) from the container's isolated filesystem to the host. Use this instead of \`docker cp\`.
 - **shannon_auth_session**: Manage persistent authenticated sessions across test phases. Actions: \`create\` (authenticate and store session), \`get\` (retrieve session credentials), \`list\` (show all active sessions), \`delete\` (remove session), \`build_headers\` (generate auth headers for use in other tools). Supports JWT, cookie, and custom header authentication.
 - **shannon_js_analyze**: Deep static analysis of JavaScript bundles. Detects: API keys (AWS, Google, GitHub, Stripe, Firebase), hardcoded credentials, XSS sinks (innerHTML, eval, document.write, dangerouslySetInnerHTML), API endpoints, interesting comments, file paths. Accepts a URL to fetch or a local file path inside Docker. Based on JS-Analyser.
 - **shannon_rate_limit_test**: Automated rate limiting and timing attack tests. Three modes: burst (rapid requests to detect rate limiting/lockout), timing (compare response times for valid vs invalid inputs to detect enumeration), race (concurrent requests to detect race conditions on state-changing operations).
