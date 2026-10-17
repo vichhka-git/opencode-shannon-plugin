@@ -1,4 +1,4 @@
-import { tool, type ToolDefinition } from "@opencode-ai/plugin"
+import { tool, type ShannonToolDef as ToolDefinition } from "../../compat"
 
 export function createShannonLogicAudit(): ToolDefinition {
   return tool({

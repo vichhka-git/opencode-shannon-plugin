@@ -1,8 +1,8 @@
-import type { PluginInput } from "@opencode-ai/plugin"
+// Shannon progress tracker hook
 import { SHANNON_TOOLS, TOOL_PHASES, PROGRESS_PREFIX } from "./constants"
 import type { ToolExecuteInput, ToolExecuteOutput, ProgressState } from "./types"
 
-export function createShannonProgressTrackerHook(_ctx: PluginInput) {
+export function createShannonProgressTrackerHook(_ctx: any) {
   const sessionProgress = new Map<string, ProgressState>()
 
   function progressKey(sessionID: string, tool: string): string {

@@ -1,4 +1,4 @@
-import { tool, type ToolDefinition } from "@opencode-ai/plugin"
+import { tool, type ShannonToolDef as ToolDefinition } from "../../compat"
 import { SHANNON_JS_ANALYZE_DESCRIPTION } from "./constants"
 import { DockerManager } from "../../docker"
 import type { JsAnalyzeResult } from "./types"

@@ -1,4 +1,4 @@
-import { tool, type ToolDefinition } from "@opencode-ai/plugin"
+import { tool, type ShannonToolDef as ToolDefinition } from "../../compat"
 import { SHANNON_AUTH_SESSION_DESCRIPTION, SESSION_TYPES } from "./constants"
 import { DockerManager } from "../../docker"
 import { sessionManager } from "./session-manager"

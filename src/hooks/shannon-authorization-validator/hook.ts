@@ -1,9 +1,9 @@
-import type { PluginInput } from "@opencode-ai/plugin"
+// Shannon authorization validator hook
 import { EXPLOIT_TOOLS, AUTHORIZATION_WARNING, AUTHORIZATION_KEY } from "./constants"
 import type { ToolExecuteInput, ToolExecuteOutput } from "./types"
 import type { ShannonConfig } from "../../config/schema"
 
-export function createShannonAuthorizationValidatorHook(_ctx: PluginInput, config: ShannonConfig) {
+export function createShannonAuthorizationValidatorHook(_ctx: any, config: ShannonConfig) {
   const toolExecuteBefore = async (
     input: ToolExecuteInput,
     output: ToolExecuteOutput,

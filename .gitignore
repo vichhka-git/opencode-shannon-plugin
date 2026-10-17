@@ -44,6 +44,9 @@ audit-logs/
 
 # OpenCode workspace
 CLAUDE.md
+.atl/
+.codegraph/
+.opencode/
 
 # Development artifacts (not part of the plugin)
 demo-*.js

@@ -1,7 +1,7 @@
-import type { PluginInput } from "@opencode-ai/plugin"
+// Shannon session manager hook
 import type { ExecutorState } from "./types"
 
-export function createShannonSessionManagerHook(_ctx: PluginInput) {
+export function createShannonSessionManagerHook(_ctx: any) {
   const executorStates = new Map<string, ExecutorState>()
 
   const event = async (input: { event: { type: string; properties?: { sessionID?: string } } }) => {

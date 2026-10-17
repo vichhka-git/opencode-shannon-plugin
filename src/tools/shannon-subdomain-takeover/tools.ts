@@ -1,4 +1,4 @@
-import { tool, type ToolDefinition } from "@opencode-ai/plugin"
+import { tool, type ShannonToolDef as ToolDefinition } from "../../compat"
 import { SHANNON_SUBDOMAIN_TAKEOVER_DESCRIPTION } from "./constants"
 import { DockerManager } from "../../docker"
 
@@ -38,7 +38,7 @@ export function createShannonSubdomainTakeover(): ToolDefinition {
 
       const subdomainList =
         args.mode === "list" && args.subdomains
-          ? args.subdomains.split("\n").map((s) => s.trim()).filter(Boolean)
+          ? args.subdomains.split("\n").map((s: string) => s.trim()).filter(Boolean)
           : []
 
       const params: Record<string, unknown> = {
